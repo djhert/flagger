@@ -93,3 +93,24 @@ func (s *stringFlag) Get() interface{} {
 func (s *stringFlag) String() string {
 	return string(*s)
 }
+
+type uintFlag uint
+
+func newUint(def uint, p *uint) *uintFlag {
+	*p = def
+	return (*uintFlag)(p)
+}
+
+func (i *uintFlag) Set(s string) error {
+	v, err := strconv.ParseUint(s, 0, strconv.IntSize)
+	*i = uintFlag(v)
+	return err
+}
+
+func (i *uintFlag) Get() interface{} {
+	return uint(*i)
+}
+
+func (i *uintFlag) String() string {
+	return strconv.FormatUint(uint64(*i), 10)
+}

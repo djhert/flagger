@@ -46,6 +46,16 @@ func (f *Flags) StringVar(s *string, def string, usage string, flgs ...string) {
 
 }
 
+func (f *Flags) Uint(def uint, usage string, flgs ...string) *uint {
+	p := new(uint)
+	f.add(&Flag{flags: flgs, Usage: usage, Value: newUint(def, p)})
+	return p
+}
+
+func (f *Flags) UintVar(i *uint, def uint, usage string, flgs ...string) {
+	f.add(&Flag{flags: flgs, Usage: usage, Value: newUint(def, i)})
+}
+
 func (f *Flags) add(flg *Flag) {
 	index := len(f.flags)
 	f.flags = append(f.flags, flg)
