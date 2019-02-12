@@ -38,6 +38,10 @@ func (c *cmdA) Action(s []string, f *flagger.Flags) error {
 	return nil
 }
 
+func (c *cmdA) Print() {
+	fmt.Printf("  CMDA \t Command A Help goes here.\n")
+}
+
 type cmdB struct {
 	b bool
 	i int
@@ -69,6 +73,10 @@ func (c *cmdB) Action(s []string, f *flagger.Flags) error {
 	return nil
 }
 
+func (c *cmdB) Print() {
+	fmt.Printf("  CMDB \t Command B Help goes here.\n")
+}
+
 func main() {
 	cmd := commands.New()
 	a := cmdA{}
@@ -76,7 +84,9 @@ func main() {
 	cmd.Add("one", &a)
 	cmd.Add("two", &b)
 	err := cmd.Parse(os.Args[1:])
-	if err != nil {
+	if err == commands.NoCmds {
+		cmd.Print()
+	} else if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
