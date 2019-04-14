@@ -6,9 +6,9 @@ import (
 
 const (
 	NAME     = "flagger"
-	MAJORVER = "0"
-	MINORVER = "9"
-	VERTAG   = "-beta"
+	MAJORVER = "1"
+	MINORVER = "0"
+	VERTAG   = "0"
 	DESC     = "Flag handler"
 )
 
