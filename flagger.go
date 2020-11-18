@@ -7,14 +7,26 @@ import (
 )
 
 var (
-	NoFlags = errors.New("No flags passed")
+	// ErrNoFlags is the error returned when no flags are passed.
+	// Useful as a check for when you want to proceed without flags.
+	ErrNoFlags = errors.New("No flags passed")
+	ErrHelp    = errors.New("Help")
+	ErrVersion = errors.New("Version")
 )
 
+// Flags is the struct used by you, the user
 type Flags struct {
-	flags     []*Flag
-	available map[string]int
+	flags       []*Flag
+	available   map[string]int
+	help        bool
+	helpText    string
+	version     bool
+	versionText string
 }
 
+// Bool creates a bool flag, returns the bool
+// usage is the string for the help
+// flgs
 func (f *Flags) Bool(usage string, flgs ...string) *bool {
 	p := new(bool)
 	f.add(&Flag{flags: flgs, Usage: usage, Value: newBool(p)})
@@ -64,7 +76,7 @@ func (f *Flags) add(flg *Flag) {
 	}
 }
 
-func (f Flags) Print(msg string) {
+func (f Flags) Help(msg string) {
 	fmt.Println(msg)
 	for i := range f.flags {
 		fmt.Println(f.flags[i].Print())
@@ -120,10 +132,10 @@ func sanitize(s []string) []string {
 	return a
 }
 
-func (f Flags) Parse(flags []string) ([]string, error) {
+func (f *Flags) Parse(flags []string) ([]string, error) {
 	var err error
 	if len(flags) < 1 {
-		return nil, NoFlags
+		return nil, ErrNoFlags
 	}
 	data := make([]string, 0)
 	fgs := sanitize(flags)
@@ -156,12 +168,33 @@ func (f Flags) Parse(flags []string) ([]string, error) {
 		}
 
 	}
+	if err == nil && f.help {
+		f.Help(f.helpText)
+		return nil, ErrHelp
+	}
+	if err == nil && f.version {
+		fmt.Println(f.versionText)
+		return nil, ErrVersion
+	}
 	return data, err
+}
+
+func (f *Flags) AddHelp(txt string, msg string) error {
+	f.helpText = msg
+	f.BoolVar(&f.help, txt, "-h", "--help")
+	return nil
+}
+
+func (f *Flags) AddVersion(txt string, msg string) error {
+	f.versionText = msg
+	f.BoolVar(&f.version, txt, "-v", "--version")
+	return nil
 }
 
 func New() *Flags {
 	f := &Flags{}
 	f.flags = make([]*Flag, 0)
 	f.available = make(map[string]int)
+
 	return f
 }

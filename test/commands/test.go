@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/hlfstr/flagger"
 	"github.com/hlfstr/flagger/commands"
-	"os"
 )
 
 type cmdA struct {
@@ -14,9 +15,11 @@ type cmdA struct {
 }
 
 func (c *cmdA) Prepare(flags *flagger.Flags) {
+	flags.AddHelp("CommandA Help", "Show CommandA flags")
 	flags.BoolVar(&c.b, "Test Bool", "-b", "--bool")
 	flags.IntVar(&c.i, 4, "Test Int", "-i", "--integer")
-	flags.StringVar(&c.s, "cmdA", "-s", "--string")
+	flags.StringVar(&c.s, "cmdA", "Test cmdA String", "-s", "--string")
+
 }
 
 func (c *cmdA) Action(s []string, f *flagger.Flags) error {
@@ -38,10 +41,6 @@ func (c *cmdA) Action(s []string, f *flagger.Flags) error {
 	return nil
 }
 
-func (c *cmdA) Print() {
-	fmt.Printf("  CMDA \t Command A Help goes here.\n")
-}
-
 type cmdB struct {
 	b bool
 	i int
@@ -49,9 +48,10 @@ type cmdB struct {
 }
 
 func (c *cmdB) Prepare(flags *flagger.Flags) {
+	flags.AddHelp("CommandB Help", "Show CommandB flags")
 	flags.BoolVar(&c.b, "Test Bool", "-b", "--bool")
 	flags.IntVar(&c.i, 9, "Test Int", "-i", "--integer")
-	flags.StringVar(&c.s, "cmdB", "-s", "--string")
+	flags.StringVar(&c.s, "cmdB", "Test cmdB String", "-s", "--string")
 }
 
 func (c *cmdB) Action(s []string, f *flagger.Flags) error {
@@ -73,19 +73,17 @@ func (c *cmdB) Action(s []string, f *flagger.Flags) error {
 	return nil
 }
 
-func (c *cmdB) Print() {
-	fmt.Printf("  CMDB \t Command B Help goes here.\n")
-}
-
 func main() {
-	cmd := commands.New()
+	commands.New()
+	commands.AddHelp("Available Commands:\n")
+	commands.AddVersion(flagger.Version())
 	a := cmdA{}
 	b := cmdB{}
-	cmd.Add("one", &a)
-	cmd.Add("two", &b)
-	err := cmd.Parse(os.Args[1:])
-	if err == commands.NoCmds {
-		cmd.Print()
+	commands.Add("one", &a)
+	commands.Add("two", &b)
+	err := commands.Parse(os.Args)
+	if err == commands.ErrNoCmds {
+		commands.Usage(flagger.Info())
 	} else if err != nil {
 		fmt.Println(err)
 		os.Exit(1)

@@ -3,48 +3,136 @@ package commands
 import (
 	"errors"
 	"fmt"
+
 	"github.com/hlfstr/flagger"
 )
 
 var (
-	NoCmds = errors.New("No Commands passed")
+	ErrNoCmds  = errors.New("No Commands passed")
+	ErrNoInit  = errors.New("Commands not initialized")
+	ErrHelp    = errors.New("Help")
+	ErrVersion = errors.New("Version")
 )
 
-func New() *Commands {
-	c := &Commands{}
-	c.cmds = make(map[string]Commander)
-	return c
-}
+var com *Commands
 
+// Commander interface defines how a Command should operate
 type Commander interface {
 	Prepare(*flagger.Flags)
 	Action([]string, *flagger.Flags) error
-	Print()
 }
 
 type Commands struct {
 	cmds map[string]Commander
+	Name string
 }
 
-func (c *Commands) Add(cmd string, cmdr Commander) {
-	c.cmds[cmd] = cmdr
+func ifInit() error {
+	if com == nil {
+		return ErrNoInit
+	}
+	return nil
 }
 
-func (c *Commands) Parse(flags []string) error {
-	if len(flags) > 0 {
-		if v, ok := c.cmds[flags[0]]; ok {
+func New() {
+	com = &Commands{}
+	com.cmds = make(map[string]Commander)
+	com.Name = ""
+}
+
+func Add(cmd string, cmdr Commander) error {
+	if err := ifInit(); err != nil {
+		return err
+	}
+	com.cmds[cmd] = cmdr
+	return nil
+}
+
+func Parse(flags []string) error {
+	if err := ifInit(); err != nil {
+		return err
+	}
+	com.Name = flags[0]
+	if len(flags) > 1 {
+		if v, ok := com.cmds[flags[1]]; ok {
 			f := flagger.New()
 			v.Prepare(f)
-			return v.Action(flags[1:], f)
+			return v.Action(flags[2:], f)
 		}
-		return fmt.Errorf("Unable to locate command %s", flags[0])
+		return fmt.Errorf("%s: invalid command -- '%s'", com.Name, flags[1])
 	}
-	return NoCmds
+	return ErrNoCmds
 }
 
-func (c *Commands) Print() {
-	fmt.Println("Available Commands:")
-	for i := range c.cmds {
-		c.cmds[i].Print()
+func Usage(msg string, a ...interface{}) error {
+	if err := ifInit(); err != nil {
+		return err
 	}
+	fmt.Printf("Usage: %s [COMMAND] [OPTION]...\n", com.Name)
+	fmt.Printf(msg, a...)
+	fmt.Printf("\nAvailable Commands:\n")
+	print(false)
+	return nil
+}
+
+func print(full bool) {
+	for i := range com.cmds {
+		if full {
+			f := flagger.New()
+			com.cmds[i].Prepare(f)
+			f.Help(fmt.Sprintf(" %s", i))
+			fmt.Println()
+		} else {
+			fmt.Printf(" %s\n", i)
+		}
+	}
+}
+
+func Help(msg string) error {
+	if err := ifInit(); err != nil {
+		return err
+	}
+	fmt.Printf("Usage: %s [COMMAND] [OPTION]...\n", com.Name)
+	fmt.Printf(msg)
+	print(true)
+	return ErrHelp
+}
+
+type help struct {
+	txt string
+}
+
+func (h *help) Prepare(flags *flagger.Flags) {}
+
+func (h *help) Action(s []string, f *flagger.Flags) error {
+	return Help(h.txt)
+}
+
+func AddHelp(msg string) error {
+	if err := ifInit(); err != nil {
+		return err
+	}
+	h := &help{txt: msg}
+	Add("help", h)
+	return nil
+}
+
+type version struct {
+	txt string
+}
+
+func (v *version) Prepare(flags *flagger.Flags) {}
+
+func (v *version) Action(s []string, f *flagger.Flags) error {
+	fmt.Println(v.txt)
+	return ErrVersion
+}
+
+func AddVersion(msg string) error {
+	if err := ifInit(); err != nil {
+		return err
+	}
+	v := &version{txt: msg}
+	Add("version", v)
+	return nil
 }
