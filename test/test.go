@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -25,11 +26,14 @@ func main() {
 	fmt.Printf("  Bool:   %t\n", *b)
 	fmt.Printf("  Int:    %d\n", *i)
 	fmt.Printf("  String: %s\n", *s)
-	d, err := f.Parse(os.Args[1:])
-	if err != nil {
-		fmt.Println(err)
-		fmt.Printf("Try '%s --help' for more information\n", os.Args[0])
-		os.Exit(1)
+	d, err := f.Parse(os.Args)
+	if errors.Is(err, flagger.ErrNoFlags) {
+		f.Usage("[OPTION]...", fmt.Sprintf("Try '%s --help' for more information", f.Name))
+		os.Exit(0) // Exit clean
+	} else if err != nil {
+		f.Usage("[OPTION]...", err.Error())
+		fmt.Printf("Try '%s --help' for more information\n", f.Name)
+		os.Exit(1) // Exit error
 	}
 	fmt.Println("After")
 	fmt.Printf("  Bool:   %t\n", *b)

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -82,8 +83,11 @@ func main() {
 	commands.Add("one", &a)
 	commands.Add("two", &b)
 	err := commands.Parse(os.Args)
-	if err == commands.ErrNoCmds {
-		commands.Usage(flagger.Info())
+	if errors.Is(err, commands.ErrNoCmds) {
+		commands.Usage("[COMMAND] [OPTION]...", flagger.Info())
+	} else if errors.Is(err, commands.ErrBadCmd) {
+		commands.Usage("[COMMAND] [OPTION]...", err.Error())
+		os.Exit(1)
 	} else if err != nil {
 		fmt.Println(err)
 		os.Exit(1)

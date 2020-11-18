@@ -9,15 +9,19 @@ import (
 var (
 	// ErrNoFlags is the error returned when no flags are passed.
 	// Useful as a check for when you want to proceed without flags.
-	ErrNoFlags = errors.New("No flags passed")
-	ErrHelp    = errors.New("Help")
-	ErrVersion = errors.New("Version")
+	ErrNoFlags  = errors.New("No flags passed")
+	ErrBadFlag  = errors.New("invalid flag")
+	ErrBadValue = errors.New("invalid value")
+	ErrNoValue  = errors.New("missing operand")
+	ErrHelp     = errors.New("Help")
+	ErrVersion  = errors.New("Version")
 )
 
 // Flags is the struct used by you, the user
 type Flags struct {
 	flags       []*Flag
 	available   map[string]int
+	Name        string
 	help        bool
 	helpText    string
 	version     bool
@@ -74,6 +78,11 @@ func (f *Flags) add(flg *Flag) {
 	for i := range flg.flags {
 		f.available[flg.flags[i]] = index
 	}
+}
+
+func (f Flags) Usage(usage string, msg string) {
+	fmt.Printf("Usage: %s %s\n", f.Name, usage)
+	fmt.Println(msg)
 }
 
 func (f Flags) Help(msg string) {
@@ -134,13 +143,14 @@ func sanitize(s []string) []string {
 
 func (f *Flags) Parse(flags []string) ([]string, error) {
 	var err error
-	if len(flags) < 1 {
+	f.Name = flags[0]
+	if len(flags) < 2 {
 		return nil, ErrNoFlags
 	}
 	data := make([]string, 0)
 	fgs := sanitize(flags)
 	var found *Flag
-	for i := 0; i < len(fgs); i++ {
+	for i := 1; i < len(fgs); i++ {
 		if fgs[i][:1] != "-" {
 			data = append(data, fgs[i])
 			continue
@@ -148,7 +158,7 @@ func (f *Flags) Parse(flags []string) ([]string, error) {
 			if index, ok := f.available[fgs[i]]; ok {
 				found = f.flags[index]
 			} else {
-				return nil, fmt.Errorf("No such flag %s", fgs[i])
+				return nil, fmt.Errorf("%s: %w -- '%s'", f.Name, ErrBadFlag, fgs[i])
 			}
 		}
 		switch found.Value.(type) {
@@ -160,10 +170,10 @@ func (f *Flags) Parse(flags []string) ([]string, error) {
 			if (i + 1) < len(fgs) {
 				i++
 				if err = found.Value.Set(fgs[i]); err != nil {
-					return nil, fmt.Errorf("Value %s is not compatible with flag %s", fgs[i], fgs[i-1])
+					return nil, fmt.Errorf("%s: %w  -- '%s' is not compatible with flag '%s'", f.Name, ErrBadValue, fgs[i], fgs[i-1])
 				}
 			} else {
-				return nil, fmt.Errorf("No value passed into flag %s", fgs[i])
+				return nil, fmt.Errorf("%s: %w -- flag '%s' has no value", f.Name, ErrNoValue, fgs[i])
 			}
 		}
 

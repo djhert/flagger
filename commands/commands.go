@@ -10,6 +10,7 @@ import (
 var (
 	ErrNoCmds  = errors.New("No Commands passed")
 	ErrNoInit  = errors.New("Commands not initialized")
+	ErrBadCmd  = errors.New("invalid command")
 	ErrHelp    = errors.New("Help")
 	ErrVersion = errors.New("Version")
 )
@@ -40,6 +41,13 @@ func New() {
 	com.Name = ""
 }
 
+func Name() string {
+	if err := ifInit(); err != nil {
+		return ""
+	}
+	return com.Name
+}
+
 func Add(cmd string, cmdr Commander) error {
 	if err := ifInit(); err != nil {
 		return err
@@ -59,17 +67,18 @@ func Parse(flags []string) error {
 			v.Prepare(f)
 			return v.Action(flags[2:], f)
 		}
-		return fmt.Errorf("%s: invalid command -- '%s'", com.Name, flags[1])
+
+		return fmt.Errorf("%s: %w -- '%s'", com.Name, ErrBadCmd, flags[1])
 	}
 	return ErrNoCmds
 }
 
-func Usage(msg string, a ...interface{}) error {
+func Usage(usage string, msg string) error {
 	if err := ifInit(); err != nil {
 		return err
 	}
-	fmt.Printf("Usage: %s [COMMAND] [OPTION]...\n", com.Name)
-	fmt.Printf(msg, a...)
+	fmt.Printf("Usage: %s %s\n", com.Name, usage)
+	fmt.Printf(msg)
 	fmt.Printf("\nAvailable Commands:\n")
 	print(false)
 	return nil
