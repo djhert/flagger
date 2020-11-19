@@ -12,7 +12,7 @@ const (
 	// MINORVERSION of flagger
 	MINORVERSION = "1"
 	// VERSIONTAG of flagger
-	VERSIONTAG = "0"
+	VERSIONTAG = "2"
 	// DESCRIPTION of flagger
 	DESCRIPTION = "Flag handler written in Go"
 )

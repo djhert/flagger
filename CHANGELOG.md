@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.1.2
+**11/19/2020**
+- Fixed bug where commands.Parse was not passing in the right flags
+
 ## v1.1.1
 **11/18/2020**
 - Using Go 1.15
@@ -8,7 +12,7 @@
 - Added usage function to flags
 - Updated usage function for commands
 
-## v1.1.0 
+## v1.1.0
 **11/18/2020**
 - Added help and version flags/commands
 - Removed `Print` function from `Commander` interface

@@ -65,7 +65,9 @@ func Parse(flags []string) error {
 		if v, ok := com.cmds[flags[1]]; ok {
 			f := flagger.New()
 			v.Prepare(f)
-			return v.Action(flags[2:], f)
+			// Rewrite flag 1 to be the name and the command
+			flags[1] = fmt.Sprintf("%s %s", com.Name, flags[1])
+			return v.Action(flags[1:], f)
 		}
 
 		return fmt.Errorf("%s: %w -- '%s'", com.Name, ErrBadCmd, flags[1])
